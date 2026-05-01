@@ -13,6 +13,7 @@ const PRESET_LOCATIONS = [
 ];
 
 export default function Home() {
+  const [geminiKey, setGeminiKey] = useState('');
   const [lat, setLat] = useState('');
   const [lon, setLon] = useState('');
   const [dateFrom, setDateFrom] = useState('');
@@ -45,9 +46,11 @@ export default function Home() {
           lon: parseFloat(lon),
           dateFrom: dateFrom || ninetyDaysAgo,
           dateTo: dateTo || today,
+          geminiApiKey: geminiKey.trim() || undefined,
         }),
       });
-      setStep('Analyzing images with Pollinations.AI (free, no key needed)...');
+      const providerLabel = geminiKey.trim() ? 'Gemini AI' : 'Pollinations.AI (free)';
+      setStep(`Analyzing images with ${providerLabel}...`);
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Analysis failed');
       setResult(data);
@@ -58,6 +61,8 @@ export default function Home() {
       setStep('');
     }
   }
+
+  const usingGemini = geminiKey.trim().length > 0;
 
   const s = {
     page: { minHeight: '100vh', padding: '24px', maxWidth: '1000px', margin: '0 auto' },
@@ -72,31 +77,54 @@ export default function Home() {
     btnDisabled: { opacity: 0.5, cursor: 'not-allowed' },
     presets: { display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '16px' },
     presetBtn: { padding: '6px 12px', background: '#1e3a5f', color: '#93c5fd', border: '1px solid #1e40af', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem' },
-    badge: (color) => ({ display: 'inline-block', padding: '4px 10px', borderRadius: '12px', fontSize: '0.8rem', fontWeight: 600, background: color === 'red' ? '#7f1d1d' : color === 'green' ? '#14532d' : '#1e3a5f', color: color === 'red' ? '#fca5a5' : color === 'green' ? '#86efac' : '#93c5fd' }),
+    badge: (color) => ({ display: 'inline-block', padding: '4px 10px', borderRadius: '12px', fontSize: '0.8rem', fontWeight: 600, background: color === 'red' ? '#7f1d1d' : color === 'green' ? '#14532d' : color === 'yellow' ? '#713f12' : '#1e3a5f', color: color === 'red' ? '#fca5a5' : color === 'green' ? '#86efac' : color === 'yellow' ? '#fde68a' : '#93c5fd' }),
     imageGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '12px', marginTop: '16px' },
     imgCard: { background: '#1f2937', borderRadius: '8px', overflow: 'hidden', border: '1px solid #374151' },
     imgMeta: { padding: '8px', fontSize: '0.75rem', color: '#94a3b8' },
     pre: { background: '#0f172a', border: '1px solid #1e293b', borderRadius: '8px', padding: '16px', whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontSize: '0.85rem', color: '#cbd5e1', maxHeight: '500px', overflowY: 'auto', marginTop: '12px' },
     err: { background: '#7f1d1d', border: '1px solid #991b1b', borderRadius: '8px', padding: '16px', color: '#fca5a5', marginBottom: '16px' },
-    freeBadge: { display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#14532d', color: '#86efac', border: '1px solid #166534', borderRadius: '8px', padding: '6px 12px', fontSize: '0.8rem', fontWeight: 600, marginTop: '8px' },
   };
 
   return (
     <div style={s.page}>
       <div style={s.header}>
         <h1 style={s.h1}>Maritime Traffic Monitor</h1>
-        <p style={s.sub}>Sentinel-2 satellite imagery + Pollinations.AI — 100% free, no API key needed</p>
-        <div style={s.freeBadge}>
-          <span>&#10003;</span> Powered by Pollinations.AI — Free &amp; Keyless
-        </div>
+        <p style={s.sub}>Sentinel-2 satellite imagery + AI analysis &mdash; 100% free open APIs</p>
       </div>
 
       <div style={s.card}>
         <h2 style={{ color: '#e2e8f0', fontSize: '1.1rem', marginBottom: '16px' }}>Configuration</h2>
 
-        <p style={{ color: '#6ee7b7', fontSize: '0.875rem', marginBottom: '16px', background: '#064e3b', padding: '10px 14px', borderRadius: '8px', border: '1px solid #065f46' }}>
-          No API key required! AI analysis is provided for free via <strong>Pollinations.AI</strong>.
-        </p>
+        {/* AI Provider info banner */}
+        <div style={{ marginBottom: '16px', padding: '12px 16px', borderRadius: '8px', border: '1px solid', background: usingGemini ? '#1e3a5f' : '#064e3b', borderColor: usingGemini ? '#1e40af' : '#065f46' }}>
+          <div style={{ fontSize: '0.8rem', fontWeight: 700, marginBottom: '4px', color: usingGemini ? '#93c5fd' : '#6ee7b7' }}>
+            {usingGemini ? '&#9889; AI: Google Gemini 2.0 Flash (your key)' : '&#10003; AI: Pollinations.AI — Free &amp; Keyless (no key needed)'}
+          </div>
+          <div style={{ fontSize: '0.78rem', color: usingGemini ? '#bfdbfe' : '#a7f3d0' }}>
+            {usingGemini
+              ? 'Using your Gemini API key for best-quality analysis.'
+              : 'Works without any API key. Optionally enter a Gemini key below for higher quality.'}
+          </div>
+        </div>
+
+        {/* Optional Gemini API Key */}
+        <div style={{ marginBottom: '16px' }}>
+          <label style={s.label}>
+            Google Gemini API Key
+            <span style={{ marginLeft: '8px', background: '#14532d', color: '#86efac', fontSize: '0.7rem', padding: '2px 8px', borderRadius: '10px', fontWeight: 600 }}>OPTIONAL</span>
+          </label>
+          <input
+            style={s.input}
+            type="password"
+            placeholder="Leave empty to use free Pollinations.AI — or paste AIza... for Gemini"
+            value={geminiKey}
+            onChange={e => setGeminiKey(e.target.value)}
+          />
+          <p style={{ marginTop: '6px', fontSize: '0.78rem', color: '#6b7280' }}>
+            Key is optional. Without it, <strong style={{ color: '#6ee7b7' }}>Pollinations.AI</strong> is used automatically (free, no signup). Get a Gemini key at{' '}
+            <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" style={{ color: '#60a5fa' }}>aistudio.google.com</a>.
+          </p>
+        </div>
 
         <label style={s.label}>Quick select location:</label>
         <div style={s.presets}>
@@ -167,8 +195,8 @@ export default function Home() {
           )}
 
           <p style={{ color: '#6b7280', fontSize: '0.8rem', marginTop: '8px' }}>
-            Location: ({result.location.lat}, {result.location.lon}) &bull; Date range: {result.dateRange.from} to {result.dateRange.to} &bull; {result.imagesAnalyzed.length} image(s) analyzed
-            {result.aiProvider && <> &bull; AI: <em>{result.aiProvider}</em></>}
+            Location: ({result.location.lat}, {result.location.lon}) &bull; {result.dateRange.from} &rarr; {result.dateRange.to} &bull; {result.imagesAnalyzed.length} image(s)
+            {result.aiProvider && <> &bull; <span style={{ color: '#6ee7b7' }}>{result.aiProvider}</span></>}
           </p>
 
           {result.imagesAnalyzed.length > 0 && (
